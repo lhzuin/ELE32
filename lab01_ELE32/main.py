@@ -10,7 +10,7 @@ vector_length = 1000000
 if __name__ == '__main__':
     p_list = [0.5]
     last_num = 0.5
-    for i in range(15):
+    for i in range(14):
         power = pow(10,round(i/3)+1)
         last_num = math.floor(last_num*power/2)/power
         p_list.append(last_num)
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         hamming_code = hamming.encoder()
         no_encode_code = no_encode.code
         bsc_hamming = BSC(p, hamming_code)
-        bsc_no_encode = BSC(p, no_encode)
+        bsc_no_encode = BSC(p, no_encode_code)
         received_code_hamming = bsc_hamming.transform_code()
         received_code_no_encode = bsc_no_encode.transform_code()
         inferred_code_hamming = hamming.decoder(received_code_hamming)
@@ -42,9 +42,13 @@ if __name__ == '__main__':
     
     print(prob_list_hamming)
     plt.figure()
-    plt.plot(p_list, prob_list_hamming)
-    plt.plot(p_list, prob_list_no_encode)
+    plt.plot(p_list, prob_list_hamming, label="Hamming")
+    plt.plot(p_list, prob_list_no_encode, label="No Encode")
     plt.gca().invert_xaxis()
     plt.xscale('log')
     plt.yscale('log')
+    plt.title('Incidence of errors for different p values')
+    plt.xlabel('p')
+    plt.ylabel("Pb")
+    plt.legend()
     plt.savefig("mygraph.png")
