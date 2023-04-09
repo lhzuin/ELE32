@@ -3,29 +3,32 @@ from itertools import product
 
 
 
-class Hamming:
+class CustomEncode:
+    # garante acerto se até um erro for cometido
     def __init__(self, code):
         self.code = code
         self.size = len(self.code)
-        if self.size % 4 != 0:
-            raise ValueError("Code size must be divisable by 4")
-        self.transformation = np.array([[1, 0, 0, 0, 1, 1, 1], [0, 1, 0, 0, 1, 0, 1], [0, 0, 1, 0, 1, 1, 0], [0, 0, 0, 1, 0, 1, 1]])
-        self.verification = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        self.word_size = 5
+        self.codified_word_size = 10
+        if self.size % self.word_size != 0:
+            raise ValueError(f"Code size must be divisable by {self.word_size}")
+        self.transformation = np.array([[1, 0, 0, 0, 0, 1, 1, 0, 0, 0], [0, 1, 0, 0, 0, 0, 1, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 1, 1, 0], [0, 0, 0, 1, 0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1, 0, 0, 0, 1]])
+        self.verification = np.array([[1, 1, 0, 0, 0], [0, 1, 1, 0, 0], [0, 0, 1, 1, 0], [0, 0, 0, 1, 1], [1, 0, 0, 0, 1], [1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]])
 
     
     @property
     def divide_code(self):
-        matrix = np.array([self.code[i:i+4] for i in range(0, self.size, 4)])
+        matrix = np.array([self.code[i:i+self.word_size] for i in range(0, self.size, self.word_size)])
         return matrix
     
     @property
-    def generate_hamming(self):
+    def generate_transf(self):
         result = np.matmul(self.grouped_code, self.transformation)
         return np.remainder(result, 2)
 
     def get_dict(self):
         s_dict = {}
-        combinations = list(product([0, 1], repeat=7))
+        combinations = list(product([0, 1], repeat=self.codified_word_size))
         binary_array = np.array(combinations)
         row_sums = binary_array.sum(axis=1)
         sorted_binary_array = binary_array[np.argsort(row_sums)]
@@ -42,7 +45,7 @@ class Hamming:
 
     def encoder(self):
         self.grouped_code = self.divide_code
-        self.hamming_code = self.generate_hamming
+        self.hamming_code = self.generate_transf
         return self.hamming_code
 
     def decoder(self, received_code):
@@ -53,7 +56,7 @@ class Hamming:
             e = s_dict[s]
             received_code[i] = np.remainder(received_code[i] + e, 2)
         
-        information = received_code[:, :4]
+        information = received_code[:, :self.word_size]
         return information.flatten()
 
         
