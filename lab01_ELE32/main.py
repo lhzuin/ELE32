@@ -58,7 +58,10 @@ if __name__ == '__main__':
         prob_list_hamming.append(error_prob_hamming)
         prob_list_no_encode.append(error_prob_no_encode)
         prob_list_custom.append(error_prob_custom)
-    
+        
+    for i in range(len(p_list)):
+        print(f"p: {p_list[i]} -> hamming: {prob_list_hamming[i]}")
+    print(prob_list_hamming)
     plt.figure()
     plt.plot(p_list, prob_list_hamming, label="Hamming")
     plt.plot(p_list, prob_list_no_encode, label="No Encode")
