@@ -23,41 +23,11 @@ def poly_to_vector_fixed_len(p, desired_len):
     # Pad with zeros if necessary to match the degree of the polynomial
     vector = [0] * (size - len(coeffs)) + coeffs
     return np.array(vector)
-"""
-def poly_to_vector_fixed_len(p, desired_len):
-    if p.is_zero:
-        return np.zeros(desired_len)
 
-    coeffs = p.all_coeffs()
-    size = max(p.degree() + 1, desired_len)
-
-    # Create an array of zeros and fill it with the coefficients of the polynomial
-    vec = np.zeros(size)
-    vec[-len(coeffs):] = coeffs
-
-    return vec
-"""
 def vec_to_poly_with_degree(v, x):
     poly = Poly(np.poly1d(v), x, domain=GF(2))
     return poly
 
-"""
-def find_irreducible_factors_berlekamp(n):
-    x = symbols("x")
-    p_x = Poly(x**n + 1, x, domain=GF(2))
-    factored_p_x = factor(p_x.as_expr(), domain=GF(2))
-    print(factored_p_x)
-    irreducible_factors = [Poly(f, x, domain=GF(2)) for f in factored_p_x.args]
-    
-    irreducible_factors = []
-    for term in factored_p_x.as_ordered_terms():
-        base, exp = term.as_base_exp()
-        irreducible_factors.append(Poly(base, x, domain=GF(2))**exp)
-    
-    print(f"irreducible_factors: {irreducible_factors}")
-    return irreducible_factors
-
-"""
 
 def find_irreducible_factors_berlekamp(n):
     x = symbols("x")

@@ -4,7 +4,7 @@ from functools import reduce
 def find_vector_length(min_p, error_margin, error_freq, k_list):
     var = 1
     mmc = reduce(lcm, k_list)
-    return 500*mmc
+    return 1000*mmc
 
 
 def find_vector_length2(min_p, error_margin, error_freq, k_list):

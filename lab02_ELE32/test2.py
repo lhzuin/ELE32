@@ -2,6 +2,8 @@ import numpy as np
 from itertools import product
 from sympy import symbols, Poly, GF, div
 from generator_polys import  vec_to_poly, poly_to_vector_fixed_len
+from itertools import cycle
+from collections import deque
 
 class CyclicEncode:
     def __init__(self, code, n, g):
@@ -65,7 +67,7 @@ class CyclicEncode:
             if s not in s_list:
                 s_list.append(s)
         return s_list
-"""
+    """
     def get_info_word(self, s, v):
         num_of_rotates = 0
         num_of_changes = 0
@@ -84,31 +86,29 @@ class CyclicEncode:
         info_poly, remainder = div(codified_poly, self.poly_g)
         info_word = poly_to_vector_fixed_len(info_poly, self.word_size)
         return np.array(info_word)
-"""
+    """
     def get_info_word(self, s, v):
+        s = deque(s)
+        v = deque(v)
         num_of_rotates = 0
-        v_cycle = cycle(v)  # Use itertools.cycle for rotations
-
-        while sum(s) != 0 and num_of_rotates < 2 * self.codified_word_size:
+        num_of_changes = 0
+        while(sum(s) != 0 and num_of_rotates < self.codified_word_size and num_of_changes < 2):
             if tuple(s) in self.s_list:
                 v[0] = int(not v[0])
-                s = self.get_syndrome(v)
+                s = self.get_syndrome(np.array(v))
+                s = deque(s)
+                num_of_changes += 1
             else:
                 s = self.rotate_s(s)
-                next(v_cycle)  # Rotate by calling next() on the cycle
+                v.rotate(1)
                 num_of_rotates += 1
 
-        # Update the value of v using v_cycle before calling np.roll
-        v = [next(v_cycle) for _ in range(self.codified_word_size)]
-
-        # Perform the necessary rotations in one call to np.roll
-        v = np.roll(v, shift=(self.codified_word_size - num_of_rotates % self.codified_word_size))
-
-        codified_poly = vec_to_poly(v, self.x)
+        v.rotate(self.codified_word_size - num_of_rotates)
+        codified_poly = vec_to_poly(np.array(v), self.x)
         info_poly, remainder = div(codified_poly, self.poly_g)
         info_word = poly_to_vector_fixed_len(info_poly, self.word_size)
-
         return np.array(info_word)
+    """
     def rotate_s(self, s):
         #print("init")
         rotated = np.roll(s, shift=1)
@@ -120,6 +120,27 @@ class CyclicEncode:
             #rotated = np.remainder(rotated, 2)
         #print("finish")
         return rotated
-
+    """
+    """
+    def rotate_s(self, s):
+        #print("init")
+        s.rotate(1)
+        if s[0] == 1:
+            s[0] = 0
+            #rotated = rotated + self.rotate_constant
+            np.add(s, self.rotate_constant, out=s)
+            np.remainder(s, 2, out=s)
+            #rotated = np.remainder(rotated, 2)
+        #print("finish")
+        return s
+    """
+    def rotate_s(self, s):
+        s_deque = deque(s)
+        s_deque.rotate(1)
+        if s_deque[0] == 1:
+            s_deque[0] = 0
+            s_deque = deque(map(lambda x, y: (x + y) % 2, s_deque, self.rotate_constant))
+        return s_deque
+    
     def rotate_v(self, v):
         return np.roll(v, shift=1)

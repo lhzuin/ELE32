@@ -5,8 +5,7 @@ from bsc import BSC
 import math
 from generator_polys import generator_polynomials, find_best_generator
 from find_minimal_distance import get_minimum_distance
-#from cyclic_encode import CyclicEncode
-from test2 import CyclicEncode
+from cyclic_encode import CyclicEncode
 from hamming import Hamming
 from no_encode import NoEncode
 import numpy as np
@@ -52,35 +51,24 @@ if __name__ == '__main__':
     cyclic_code = cyclic.encoder()
 
     for p in p_list:
-        #information = np.random.randint(2, size=vector_length)
         print(f"p = {p}")
 
         bsc_hamming = BSC(p, hamming_code)
         bsc_no_encode = BSC(p, no_encode_code)
         bsc_cyclic = BSC(p, cyclic_code)
-        print(1)
+ 
         received_code_hamming = bsc_hamming.transform_code()
         received_code_no_encode = bsc_no_encode.transform_code()
         received_code_cyclic = bsc_cyclic.transform_code()
-        print(2)
+      
         inferred_info_hamming = hamming.decoder(received_code_hamming)
         inferred_info_no_encode = no_encode.decoder(received_code_no_encode)
         inferred_info_cyclic = cyclic.decoder(received_code_cyclic)
 
-        """
-        differences_hamming = np.bitwise_xor(np.array(inferred_info_hamming, dtype=np.int64), info)
-        differences_no_encode = np.bitwise_xor(np.array(inferred_info_no_encode, dtype=np.int64), info)
-        differences_cyclic = np.bitwise_xor(np.array(inferred_info_cyclic, dtype=np.int64), info)
-
-        num_of_errors_hamming = np.sum(differences_hamming)
-        num_of_errors_no_encode = np.sum(differences_no_encode)
-        num_of_errors_cyclic = np.sum(differences_cyclic)
-        """
-
         num_of_errors_hamming = np.sum(inferred_info_hamming)
         num_of_errors_no_encode = np.sum(inferred_info_no_encode)
         num_of_errors_cyclic = np.sum(inferred_info_cyclic)
-        print(3)
+ 
         error_prob_hamming = num_of_errors_hamming/vector_length
         error_prob_no_encode = num_of_errors_no_encode/vector_length
         error_prob_cyclic = num_of_errors_cyclic/vector_length
