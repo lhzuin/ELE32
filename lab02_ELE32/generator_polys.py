@@ -1,5 +1,6 @@
 from sympy import symbols, Poly, GF, factor, factor_list
 import itertools
+import numpy as np
 
 def poly_to_vector(p):
     if p.is_zero:
@@ -8,6 +9,38 @@ def poly_to_vector(p):
     # Pad with zeros if necessary to match the degree of the polynomial
     vector = [0] * (p.degree() + 1 - len(coeffs)) + coeffs
     return vector
+
+def vec_to_poly(v, x):
+    poly = Poly(np.poly1d(v.astype(int)), x, domain=GF(2))
+    return poly
+#"""
+def poly_to_vector_fixed_len(p, desired_len):
+    if p.is_zero:
+        return np.array([0]*desired_len)
+    coeffs = p.all_coeffs()
+    size = max(p.degree() + 1, desired_len)
+
+    # Pad with zeros if necessary to match the degree of the polynomial
+    vector = [0] * (size - len(coeffs)) + coeffs
+    return np.array(vector)
+"""
+def poly_to_vector_fixed_len(p, desired_len):
+    if p.is_zero:
+        return np.zeros(desired_len)
+
+    coeffs = p.all_coeffs()
+    size = max(p.degree() + 1, desired_len)
+
+    # Create an array of zeros and fill it with the coefficients of the polynomial
+    vec = np.zeros(size)
+    vec[-len(coeffs):] = coeffs
+
+    return vec
+"""
+def vec_to_poly_with_degree(v, x):
+    poly = Poly(np.poly1d(v), x, domain=GF(2))
+    return poly
+
 """
 def find_irreducible_factors_berlekamp(n):
     x = symbols("x")

@@ -6,7 +6,7 @@ from hamming import Hamming
 from no_encode import NoEncode
 from custom_encode import CustomEncode
 
-vector_length = 1000000
+vector_length = 8000000
 
 if __name__ == '__main__':
     p_list = [0.5]
