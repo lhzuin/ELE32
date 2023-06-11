@@ -21,7 +21,7 @@ error_freq = 0.05
 if __name__ == '__main__':
     p_list = [0.5]
     last_num = 0.5
-    for i in range(14):
+    for i in range(12):
         power = pow(10,round(i/3)+1)
         last_num = math.floor(last_num*power/2)/power
         p_list.append(last_num)
@@ -79,6 +79,8 @@ if __name__ == '__main__':
         
     for i in range(len(p_list)):
         print(f"p: {p_list[i]} -> hamming: {prob_list_hamming[i]}")
+    for i in range(len(p_list)):
+        print(f"p: {p_list[i]} -> cyclic: {prob_list_cyclic[i]}")
     print(prob_list_hamming)
     print(prob_list_cyclic)
     plt.figure()
