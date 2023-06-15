@@ -6,9 +6,9 @@ import pandas as pd
 
 def find_M(N, dc, dv):
     M = N*dv/dc
-    print(M)
+    #print(M)
     M = int(M)
-    print(M)
+    #print(M)
     return M
 
 def create_graph(N, dc, dv):
@@ -104,6 +104,7 @@ class LDPC:
         result = poly_to_vector_fixed_len(result, self.codified_word_size)
         return result
     """
+    """
     def decoder(self, received_code):
         return np.array([self.decode_word(received_code[i:i+self.codified_word_size]) for i in range(0, len(received_code), self.codified_word_size)]).flatten()
 
@@ -148,3 +149,42 @@ class LDPC:
             inferred_word = np.remainder(inferred_word, 2)
 
         return inferred_word
+    """
+    def decoder(self, received_code):
+        return np.array([self.decode_word(received_code[i:i+self.codified_word_size]) for i in range(0, len(received_code), self.codified_word_size)]).flatten()
+
+    def decode_word(self, codified_word):
+
+        inferred_word = codified_word
+        error_list = np.zeros(self.N)
+
+        for _ in range(4):
+            # Descubro quais equações não foram satisfeitas
+            equation_line = inferred_word @ self.sparse_matrix
+            equation_line %= 2
+
+            # Repito a suposta informação, replicando-a em N linhas
+            equation_matrix = np.tile(equation_line, (self.N, 1))
+            sparse_equation_matrix = csr_matrix(equation_matrix)
+
+            # Encontro número de equações erradas que cada nó participa
+            result = sparse_equation_matrix.multiply(self.sparse_matrix)
+
+            error_list = result.sum(axis=1).flatten()
+
+            if np.amax(error_list) == 0:
+                break
+
+            # Get the indices of elements in error_list equal to max_value
+            indices = np.where(error_list == np.amax(error_list))[1]
+
+            inferred_word[indices] += 1
+            inferred_word %= 2
+
+        return inferred_word
+    
+    def get_error_prob(self, received_code):
+        inferred_info = self.decoder(received_code)
+        num_of_errors = np.sum(inferred_info)
+        error_prob = num_of_errors/self.size
+        return error_prob

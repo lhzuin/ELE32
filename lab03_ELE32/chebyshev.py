@@ -9,11 +9,12 @@ def find_vector_length(min_p, error_margin, error_freq, k_list):
 
 def find_vector_length2(min_p, error_margin, error_freq, k_list):
     num = (1-min_p)/(min_p*error_freq*error_margin**2) 
-    print(num)
+    num = min(num, 10**7)
+    #print(num)
     mmc = reduce(lcm, k_list)
-    print(mmc)
+    #print(mmc)
     num = ceil(num/mmc)*mmc
-
+    print(f"vector length: {num}")
     return num
 
 

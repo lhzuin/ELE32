@@ -47,7 +47,6 @@ class Hamming:
 
     def decoder(self, received_code):
         if received_code.ndim == 1:
-            print("obaaaaaa")
             received_code = np.array([received_code[i:i+7] for i in range(0, len(received_code), 7)])
 
         s_array = self.get_syndrome(received_code)
