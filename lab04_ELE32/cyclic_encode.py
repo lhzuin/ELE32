@@ -2,43 +2,34 @@ import numpy as np
 from itertools import product
 from sympy import symbols, Poly, GF, div
 from generator_polys import  vec_to_poly, poly_to_vector_fixed_len
-from itertools import cycle
 from collections import deque
+from generator_polys import generator_polynomials, find_best_generator
 
 class CyclicEncode:
-    def __init__(self, code, n, g):
-        self.code = code
-        self.size = len(self.code)
-        self.codified_word_size = n
-        self.g = g
+    def __init__(self, codified_code, n, k):
+        self.codified_code = codified_code
+        self.size = len(self.codified_code)
+        self.codified_word_size = n # n
+        self.gen_polys = generator_polynomials(n, k)
+        self.g = find_best_generator(self.gen_polys)
         self.x = symbols('x')
         self.poly_g = vec_to_poly(np.array(self.g), self.x)
-        self.g_degree = len(g)-1
-        self.word_size = self.codified_word_size - self.g_degree
+        self.g_degree = len(self.g)-1
+        self.word_size = self.codified_word_size - self.g_degree # k
         self.rotate_constant = self.g[:0:-1]
-        if self.size % self.word_size != 0:
-            raise ValueError(f"Code size must be divisible by {self.word_size}")
+        if self.size % self.codified_word_size != 0:
+            raise ValueError(f"Code size must be divisible by {self.codified_word_size}")
         self.s_list = self.get_syndrome_list()  # Cache the results of get_syndrome_list in __init__
+        self.n = n
+        self.k = k
+        self.r = k/n
+        self.name = f"Cyclic Encode n={n}, k={k}"
+        self.is_binary = True
+        self.receive_L = False
 
-    @property
-    def divide_code(self):
-        matrix = np.array([self.code[i:i+self.word_size] for i in range(0, self.size, self.word_size)])
-        return matrix
-
-    def encoder(self):
-        grouped_code = self.divide_code
-        encoded_code = [self.encode_word(u) for u in grouped_code]
-        return np.array(encoded_code, dtype=int)
-
-    def encode_word(self, u):
-        poly_u = vec_to_poly(u, self.x)
-        result = self.poly_g * poly_u
-        result = Poly(result.as_expr(), self.x, domain=GF(2))
-        result = poly_to_vector_fixed_len(result, self.codified_word_size)
-        return result
 
     def decoder(self, received_code):
-        return np.array([self.decode_word(codified_word) for codified_word in received_code]).flatten()
+        return np.array([self.decode_word(received_code[i:i+self.codified_word_size]) for i in range(0, len(received_code), self.codified_word_size)]).flatten()
 
     def decode_word(self, codified_word):
         s = self.get_syndrome(codified_word)

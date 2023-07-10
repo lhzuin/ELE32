@@ -1,4 +1,5 @@
 import numpy as np
+#import cupy as np
 from random import randint
 import pandas as pd
 
@@ -59,7 +60,7 @@ def generate_csv(sparse_matrix, N):
     df = pd.DataFrame(dense_matrix)
 
     # Save DataFrame to CSV
-    df.to_csv(f"sparse_matrix_N_{N}.csv", index=False)
+    df.to_csv(f"sparse_matrix_N_{N}.csv", index=False, header=False)
 
 
 
@@ -79,100 +80,45 @@ def find_dc_dv(T):
         
 
 
-class LDPC:
-    def __init__(self, code, dc, dv, N):
-        self.code = code
+class LlrLDPC:
+    def __init__(self, codified_code, dc, dv, N, sparse_matrix_name = None):
+        self.codified_code = codified_code
         self.dc = dc
         self.dv = dv
         self.N = N
         self.M = find_M(N, dc, dv)
-        self.size = len(self.code)
+        self.size = len(self.codified_code)
         self.word_size = self.M
         self.codified_word_size = N
-        self.sparse_matrix = create_graph(N, dc, dv)
+        if sparse_matrix_name is None:
+            self.sparse_matrix = create_graph(N, dc, dv)
+        else:
+            self.sparse_matrix = np.genfromtxt(sparse_matrix_name, delimiter=',')
+        #print(self.sparse_matrix)
         self.v2c = np.zeros((self.N, self.M))
         self.c2v = np.zeros((self.N, self.M))
-        self.k = (self.dc-self.dv)/self.dc
-        self.name = f'LDPC N={N}'
+        self.r = (self.dc-self.dv)/self.dc # taxa
+        self.k = int(self.N * self.r)
+        self.name = f'LDPC LLR N={N}'
         self.is_binary = False
-    
-    @property
-    def divide_code(self):
-        matrix = np.array([self.code[i:i+self.word_size] for i in range(0, self.size, self.word_size)])
-        return matrix
+        self.receive_L = True
 
-    def encoder(self):
-        grouped_code = self.divide_code
-        encoded_code = [self.encode_word(u) for u in grouped_code]
-        return np.array(encoded_code, dtype=int)
-
-    """
-    def encode_word(self, u):
-        poly_u = vec_to_poly(u, self.x)
-        result = self.poly_g * poly_u
-        result = Poly(result.as_expr(), self.x, domain=GF(2))
-        result = poly_to_vector_fixed_len(result, self.codified_word_size)
-        return result
-    """
-    """
     def decoder(self, received_code):
         return np.array([self.decode_word(received_code[i:i+self.codified_word_size]) for i in range(0, len(received_code), self.codified_word_size)]).flatten()
 
-    def decode_word(self, codified_word):
-
-        inferred_word = codified_word
-        error_list = np.array([0]*self.N)
-        for i in range(4):
-            # Descubro quais equações não foram satisfeitas
-            equation_line = inferred_word @ self.sparse_matrix
-            equation_line = np.remainder(equation_line, 2)
-
-            # Repito a suposta informação, replicando-a em N linhas
-            equation_matrix = np.tile(equation_line, (self.N, 1))
-
-            sparse_equation_matrix = csr_matrix(equation_matrix)
-
-            # Encontro número de equações erradas que cada nó participa
-            result = sparse_equation_matrix.multiply(self.sparse_matrix)
-
-            error_list = result.sum(axis=1).flatten()
-
-            result_array = np.zeros(self.N)
-
-            max_value = np.amax(error_list)
-
-            if max_value == 0:
-                #print("*** COND 1 ***")
-                break
-
-            # Get the indices of elements in error_list equal to max_value
-            indices = np.where(error_list == max_value)[1]
-
-            result_array[indices] = 1
-
-            if sum(result_array) == 0:
-                #print("*** COND 2 ***")
-                break
-
-            inferred_word = inferred_word + result_array
-
-            inferred_word = np.remainder(inferred_word, 2)
-
-        return inferred_word
-    """
-    def decoder(self, received_code):
-        return np.array([self.decode_word(received_code[i:i+self.codified_word_size]) for i in range(0, len(received_code), self.codified_word_size)]).flatten()
-
-    def decode_word(self, codified_word):
-        inferred_word = codified_word
-        max_num_of_iterations = 20
+    def decode_word(self, L_initial):
+        self.v2c.fill(0)# np.zeros((self.N, self.M))
+        self.c2v.fill(0) #np.zeros((self.N, self.M))
+        #inferred_word = codified_word
+        max_num_of_iterations = 5#20
+        #print(L_initial)
 
         for _ in range(max_num_of_iterations):
-            self.v_iteration(codified_word)
+            self.v_iteration(L_initial)
             if self.c_iteration():
                 break
         sum_lines = np.sum(self.c2v, axis=1)
-        inferred_word = np.transpose(sum_lines + codified_word)
+        inferred_word = np.transpose(sum_lines + L_initial)
         # Create a boolean mask for positive and negative values, including zero
         positive_mask = inferred_word >= 0
         negative_mask = inferred_word < 0
@@ -185,39 +131,48 @@ class LDPC:
 
     
     def v_iteration(self, L_array):
-        sum_lines = np.sum(self.c2v, axis=1)
+        sum_lines = np.sum(self.c2v, axis=1) # Array com N elementos
+        #print(sum_lines)
         temp = np.transpose(sum_lines + L_array) # corresponde a estimativas para decisão (positivo ou negativo)
         temp = temp.reshape(-1, 1)
-        #print(temp)
         self.v2c = np.tile(temp, (1, self.M)) - self.c2v
+        self.v2c = np.multiply(self.v2c, self.sparse_matrix)
+        #print(self.v2c)
 
     def c_iteration(self):
-        N, M = self.v2c.shape
-        self.c2v = np.zeros((N, M))
+        #N, M = self.v2c.shape
+        #self.c2v = np.zeros((N, M))
         is_valid_code = True
 
-        for j in range(M):
+        for j in range(self.M):
             # Select column j
             column = self.v2c[:, j]
             
             # Compute the product of non-zero elements for each line
             non_zero_elems = column[column != 0]
-            product = np.prod(non_zero_elems)
+            product = np.prod(np.sign(non_zero_elems))
             
             if product < 0:
                 is_valid_code = False
             
-            for i in range(N):
+            for i in range(self.N):
                 # Compute minimum absolute non-zero value in column excluding i-th row
-                min_abs_val = np.min(np.abs(column[np.where((np.arange(N) != i) & (column != 0))]))
+                min_abs_val = np.min(np.abs(column[np.where((np.arange(self.N) != i) & (column != 0))]))
                 
                 # Compute sign based on the multiplication of all non null elements of column j that are not in line i
                 if column[i] != 0:
-                    self.c2v[i, j] = np.sign(product/column[i]) * min_abs_val
+                    self.c2v[i, j] = np.sign(product*column[i]) * min_abs_val
                 else:
                     self.c2v[i, j] = 0
 
+        #print(self.c2v)
+        # Limit absolute value of elements in v2c to 'limit'
+        #limit = 10**5
+        #v2c_abs_limited = np.clip(np.abs(self.v2c), a_min=None, a_max=limit)
 
+        # Restore original signs to the limited values
+        #self.v2c = np.sign(self.v2c) * v2c_abs_limited
+        #print(self.v2c)
         return is_valid_code
 
     def get_error_prob(self, received_code):

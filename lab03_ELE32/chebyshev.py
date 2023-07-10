@@ -9,7 +9,7 @@ def find_vector_length(min_p, error_margin, error_freq, k_list):
 
 def find_vector_length2(min_p, error_margin, error_freq, k_list):
     num = (1-min_p)/(min_p*error_freq*error_margin**2) 
-    num = min(num, 10**7)
+    num = min(num, 10**6)
     #print(num)
     mmc = reduce(lcm, k_list)
     #print(mmc)

@@ -4,27 +4,19 @@ from itertools import product
 
 
 class Hamming:
-    def __init__(self, code):
-        self.code = code
-        self.size = len(self.code)
-        self.k = 4/7
+    def __init__(self, codified_code):
+        self.codified_code = codified_code
+        self.size = len(self.codified_code)
+        self.k = 4
+        self.n = 7
+        self.r = self.k/self.n
         self.name = "Hamming"
         self.is_binary = True
-        if self.size % 4 != 0:
-            raise ValueError("Code size must be divisable by 4")
+        self.receive_L = False
+        if self.size % 7 != 0:
+            raise ValueError("Code size must be divisable by 7")
         self.transformation = np.array([[1, 0, 0, 0, 1, 1, 1], [0, 1, 0, 0, 1, 0, 1], [0, 0, 1, 0, 1, 1, 0], [0, 0, 0, 1, 0, 1, 1]])
         self.verification = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
-
-    
-    @property
-    def divide_code(self):
-        matrix = np.array([self.code[i:i+4] for i in range(0, self.size, 4)])
-        return matrix
-    
-    @property
-    def generate_hamming(self):
-        result = np.matmul(self.grouped_code, self.transformation)
-        return np.remainder(result, 2)
 
     def get_dict(self):
         s_dict = {}
@@ -43,10 +35,6 @@ class Hamming:
         s = np.matmul(received_code, self.verification)
         return np.remainder(s, 2)
 
-    def encoder(self):
-        self.grouped_code = self.divide_code
-        self.hamming_code = self.generate_hamming
-        return self.hamming_code
 
     def decoder(self, received_code):
         if received_code.ndim == 1:
@@ -61,12 +49,6 @@ class Hamming:
         
         information = received_code[:, :4]
         return information.flatten()
-    
-    def reset(self, code):
-        self.code = code
-        self.size = len(self.code)
-        if self.size % 4 != 0:
-            raise ValueError("Code size must be divisable by 4")
 
         
 

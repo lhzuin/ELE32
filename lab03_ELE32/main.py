@@ -21,6 +21,7 @@ if __name__ == "__main__":
         p_list.append(last_num)
     print(p_list)
     N_list = [98, 203, 497]
+    N_list = [1001]
 
     T = 4/7
     dc, dv = find_dc_dv(T)
